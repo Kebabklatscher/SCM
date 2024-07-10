@@ -15,6 +15,7 @@ public class Order {
     private int possibleRoutes;
     private int chosenRoute;
     private final ArrayList<Route> routes;
+
     public int getId() {
         return id;
     }
@@ -52,50 +53,76 @@ public class Order {
                 }
             }
         }
-        //remove exclusive plants where this customer is not en exclusive customer
+        //remove exclusive plants where this customer is not an exclusive customer
         possiblePlants.removeIf(p -> p.isExclusive() && !p.isExclusiveCustomer(customer));
 
-        //possibleRoutes = possiblePlants
-        possibleRoutes = possiblePlants.size();
-        if (possibleRoutes==0)return;
-        //create new routes
-        for (Plant p: possiblePlants) {
-            routes.add(new Route(p));
-        }
+        if (possiblePlants.isEmpty())return;
 
         //calculate transportation cost
-        switch (serviceLevel){
-            case CRF:
-                //transportation cost = 0
-                for (Route r:routes) {
-                    r.setCost(r.getPlant().getUnitCost()*quantity);
+        if (serviceLevel == ServiceLevel.CRF) {
+            //create new routes
+            for (Plant p: possiblePlants) {
+                routes.add(new Route(p));
+            }
+            possibleRoutes = routes.size();
+            //transportation cost = 0
+            for (Route r : routes) {
+                r.setCost(r.getPlant().getCost(quantity));
+            }
+        }else{  //Service Levels DTD and DTP
+            //create new routes
+            for (Plant p: possiblePlants) {
+                for (String s: p.getPossiblePorts()){
+                    routes.add(new Route(p,s));
                 }
-                break;
-            case DTP:
-                //TODO: transportation cost
-                break;
-            case DTD:
-                //TODO: transportation cost
-                break;
-            default: //unused
+            }
+            possibleRoutes = routes.size();
+            //get all possible FreightRates for every route
+            ArrayList<Route> impossibleRoute = new ArrayList<>();
+            for (Route r : routes) {
+                double bufferCost = Double.MAX_VALUE;
+                FreightRate bufferFreightRate = null;
+                for (FreightRate f: freightRates) {
+                    //choose FreightRate with the lowest cost
+                    if(f.getOrigPort().equals(r.getPort()) && f.getDestPort().equals("PORT09") && f.isInWeightRange(weight) && f.getServiceLevel().equals(serviceLevel) && (f.getCost(weight)<bufferCost)){
+                        bufferCost = f.getCost(weight);
+                        bufferFreightRate = f;
+                    }
+                }
+                //if there are no possible FreightRates for this order, mark this as impossible route
+                if(bufferFreightRate == null){
+                    impossibleRoute.add(r);
+                }else{
+                    r.setCost(r.getPlant().getCost(quantity)+bufferCost);
+                    r.setFreightRate(bufferFreightRate);
+                    r.setCarrier(bufferFreightRate.getCarrier());
+                }
+            }
+            //remove impossible routes
+            if(!impossibleRoute.isEmpty()){
+                for (Route r: impossibleRoute) {
+                    routes.remove(r);
+                }
+                possibleRoutes = routes.size();
+            }
         }
         //choose the cheapest route
-        double bufferCost = 999999999;
+        double bufferCost = Double.MAX_VALUE;
         Route bufferRoute = null;
         for (Route r: routes) {
             if (r.getCost()<bufferCost){
                 bufferCost = r.getCost();
                 bufferRoute = r;
-                break;
             }
         }
         chosenRoute = routes.indexOf(bufferRoute);
+
     }
     public int getPossibleRoutes() {
         return possibleRoutes;
     }
     public Route getChosenRoute(){
-        return this.routes.get(chosenRoute);
+        return routes.get(chosenRoute);
     }
     public Order(int id, LocalDate date, String customer, ServiceLevel serviceLevel, int product, int quantity, double weight) {
         this.id = id;
@@ -118,7 +145,7 @@ public class Order {
                 ", product=" + product +
                 ", quantity=" + quantity +
                 ", weight=" + weight +
-                ", cost=" + this.routes.get(chosenRoute).getCost() +
+                ", cost=" + routes.get(chosenRoute).getCost() +
                 '}';
     }
 }

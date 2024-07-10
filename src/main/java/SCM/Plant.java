@@ -9,6 +9,7 @@ public class Plant {
     private final double unitCost;
     private Boolean exclusive;
     private final ArrayList<String> exclusiveCustomers = new ArrayList<>();
+
     public Plant(String name, double unitCost) {
         this.name = name;
         this.unitCost = unitCost;
@@ -44,8 +45,8 @@ public class Plant {
     public int getCapacity() {
         return capacity;
     }
-    public double getUnitCost() {
-        return unitCost;
+    public double getCost(int quantity) {
+        return unitCost*quantity;
     }
 
     @Override

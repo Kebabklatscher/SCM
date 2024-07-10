@@ -4,6 +4,7 @@ import java.util.ArrayList;
 public class Product {
     private final int id;
     private final ArrayList<String> possiblePlants = new ArrayList<>();
+
     public Product(int id, String plant){
         this.id=id;
         this.addPlant(plant);

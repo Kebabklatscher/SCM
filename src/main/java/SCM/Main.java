@@ -19,7 +19,9 @@ import java.io.IOException;
 public class Main {
 
     public static void main(String[] args) {
+        //measure execution time
         long timeStart = System.currentTimeMillis();
+        //import testdata
         Data data = new Data();
         try{
             data.readFile();
@@ -42,7 +44,7 @@ public class Main {
                 data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
             }
 
-            //TODO: add implementation of combining orders that use the same carrier (add weight -> reduce cost)
+            //TODO: add optimization of combining orders that use the same carrier (add weight -> reduce cost)
         }
         System.out.println(unresolvedOrders + " Orders out of " + data.orders.size() + " could not be shipped");
         data.writeFile();

@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Objects;
 
 public class Data {
     public ArrayList<Plant> plants = new ArrayList<>();
@@ -35,7 +34,7 @@ public class Data {
             cell = row.getCell(8);
             String customer = cell.getStringCellValue();
             cell = row.getCell(5);
-            String serviceLevel = cell.getStringCellValue();
+            String serviceLevel = cell.getStringCellValue().replaceAll("\\s+","");  //remove whitespaces from cells
             cell = row.getCell(9);
             int product = (int) cell.getNumericCellValue();
             cell = row.getCell(12);
@@ -68,9 +67,9 @@ public class Data {
             cell = row.getCell(7);
             double rate = cell.getNumericCellValue();
             cell = row.getCell(8);
-            String modeOfTransport = cell.getStringCellValue();
-            //tpt_day_cnt and carrier type are ignored for now
-            freightRates.add(new FreightRate(carrier,originPort,destinationPort,minWeight,maxWeight,ServiceLevel.valueOf(serviceLevel),minRate,rate,modeOfTransport));
+            String modeOfTransport = cell.getStringCellValue().replaceAll("\\s+","");   //remove whitespaces from cells
+            //tpt_day_cnt is ignored for now
+            freightRates.add(new FreightRate(carrier,originPort,destinationPort,minWeight,maxWeight,ServiceLevel.valueOf(serviceLevel),minRate,rate,ModeOfTransport.valueOf(modeOfTransport)));
         }
         //Sheet 2 - WhCosts
         sheet = wb.getSheetAt(2);
@@ -95,7 +94,7 @@ public class Data {
             cell = row.getCell(1);
             int capacity = (int) cell.getNumericCellValue();
             for (Plant p : plants) {
-                if (Objects.equals(p.getName(), name)) p.setCapacity(capacity);  //add capacity to existing plants
+                if (p.getName().equals(name)) p.setCapacity(capacity);  //add capacity to existing plants
             }
         }
         //Sheet 4 - ProductPerPlant
@@ -111,7 +110,7 @@ public class Data {
             int id = (int) cell.getNumericCellValue();
             if(allProductsBuffer.contains(id)){ //search for existing product
                 for (Product p : products) {
-                    if (Objects.equals(p.getId(), id)) p.addPlant(plant);  //add plant to existing product
+                    if (p.getId()== id) p.addPlant(plant);  //add plant to existing product
                 }
             }else{
                 products.add(new Product(id,plant));
@@ -129,7 +128,7 @@ public class Data {
             cell = row.getCell(1);
             String name = cell.getStringCellValue();
             for (Plant p : plants) {
-                if (Objects.equals(p.getName(), plant)) p.makeExclusive();  //set exclusivity-flag for corresponding plant
+                if (p.getName().equals(plant)) p.makeExclusive();  //set exclusivity-flag for corresponding plant
                 p.addExclusiveCustomer(name);
             }
         }
@@ -144,7 +143,7 @@ public class Data {
             cell = row.getCell(1);
             String port = cell.getStringCellValue();
             for (Plant p : plants) {
-                if (Objects.equals(p.getName(), plant)) p.addPort(port);  //add port to existing plants
+                if (p.getName().equals(plant)) p.addPort(port);  //add port to existing plants
             }
         }
 
@@ -171,9 +170,9 @@ public class Data {
         row.createCell(7).setCellValue(createHelper.createRichTextString("Plant"));
         row.createCell(8).setCellValue(createHelper.createRichTextString("Origin Port"));
         row.createCell(9).setCellValue(createHelper.createRichTextString("Destination Port"));
-        //carrier not yet implemented
-        //row.createCell(10).setCellValue(createHelper.createRichTextString("Carrier"));
-        row.createCell(10).setCellValue(createHelper.createRichTextString("Cost"));
+        row.createCell(10).setCellValue(createHelper.createRichTextString("Carrier"));
+        row.createCell(11).setCellValue(createHelper.createRichTextString("Mode of Transport"));
+        row.createCell(12).setCellValue(createHelper.createRichTextString("Cost"));
 
         //other rows
         int i = 1;
@@ -191,16 +190,20 @@ public class Data {
                 row.createCell(7).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPlant().getName()));
                 row.createCell(8).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPort()));
                 row.createCell(9).setCellValue(createHelper.createRichTextString("PORT09"));
-                //carrier not yet implemented
-                //row.createCell(10).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getCarrier()));
-                row.createCell(10).setCellValue(o.getChosenRoute().getCost());
+                row.createCell(10).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getCarrier()));
+                if(o.getServiceLevel().equals(ServiceLevel.CRF)){
+                    row.createCell(11).setCellValue(createHelper.createRichTextString(""));
+                }else{
+                    row.createCell(12).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getFreightRate().getModeOfTransport().toString()));
+                }
+                row.createCell(12).setCellValue(o.getChosenRoute().getCost());
             }else{
                 row.createCell(7).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(8).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(9).setCellValue(createHelper.createRichTextString(""));
-                //carrier not yet implemented
-                //row.createCell(10).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getCarrier()));
-                row.createCell(10).setCellValue(0);
+                row.createCell(10).setCellValue(createHelper.createRichTextString(""));
+                row.createCell(11).setCellValue(createHelper.createRichTextString(""));
+                row.createCell(12).setCellValue(0);
             }
         }
 
