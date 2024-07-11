@@ -31,6 +31,7 @@ public class Main {
         }
 
         int unresolvedOrders = 0;
+        double totalCost = 0;
         for (Order o: data.orders) {
             //plan all possible routes and choose the cheapest
             o.planRoutes(data.products,data.plants,data.freightRates);
@@ -42,11 +43,15 @@ public class Main {
                 Plant buffer = o.getChosenRoute().getPlant();
                 buffer.decrementCapacity();
                 data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
+                totalCost+=o.getChosenRoute().getCost();
             }
 
             //TODO: add optimization of combining orders that use the same carrier (add weight -> reduce cost)
         }
         System.out.println(unresolvedOrders + " Orders out of " + data.orders.size() + " could not be shipped");
+        //round total cost to cents
+        totalCost = (double) Math.round(totalCost * 100) /100;
+        System.out.println("Total cost: " + totalCost + " €");
         data.writeFile();
         long timeEnd = System.currentTimeMillis();
 

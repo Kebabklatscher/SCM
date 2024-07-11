@@ -47,7 +47,7 @@ public class Order {
         //get plants with capacity > 0
         for (String s:possiblePlantsString) {
             for (Plant p:plants) {
-                if(p.getName().equals(s) && (p.getCapacity() > 1)){
+                if(p.getName().equals(s) && (p.getCapacity() > 0)){
                     possiblePlants.add(p);
                     break;
                 }
