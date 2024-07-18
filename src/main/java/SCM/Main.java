@@ -32,27 +32,59 @@ public class Main {
 
         int unresolvedOrders = 0;
         double totalCost = 0;
-        for (Order o: data.orders) {
-            //plan all possible routes and choose the cheapest
+        Data outputData = new Data();
+        boolean totalCapacityChanged = false;
+        for (Order o: data.orders){
             o.planRoutes(data.products,data.plants,data.freightRates);
-            if(o.getPossibleRoutes()==0){
-                unresolvedOrders++;
-                //TODO: optimize algorithm, so that unresolved Orders = 0
-            }else{
-                //decrement plant capacity by 1
-                Plant buffer = o.getChosenRoute().getPlant();
-                buffer.decrementCapacity();
-                data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
+        }
+        Plant buffer = null;
+        while (!data.orders.isEmpty()){
+            for (Order o: data.orders) {
+                //calculate, how many routes are possible for every order
+                o.checkRoutes();
+                switch (o.getPossibleRoutes()){
+                    case 0:
+                        unresolvedOrders++;
+                        outputData.orders.add(o);
+                        break;
+                    case 1:
+                        o.chooseCheapestRoute();
+                        buffer = o.getChosenRoute().getPlant();
+                        buffer.decrementCapacity();
+                        data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
+                        outputData.orders.add(o);
+                        totalCapacityChanged = true;
+                        break;
+                    default:
+                        //when there are no more orders with 0 and 1, choose a route
+                        if(!totalCapacityChanged){
+                            o.chooseCheapestRoute();
+                            buffer = o.getChosenRoute().getPlant();
+                            buffer.decrementCapacity();
+                            data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
+                            outputData.orders.add(o);
+                            totalCapacityChanged = true;
+                        }
+                        break;
+                }
+                //TODO: add optimization of combining orders that use the same carrier (add weight -> reduce cost)
+            }
+            data.orders.removeAll(outputData.orders);
+            totalCapacityChanged = false;
+        }
+
+        System.out.println(unresolvedOrders + " Orders out of " + outputData.orders.size() + " could not be shipped");
+        //calculate total cost
+        for (Order o: outputData.orders){
+            if(o.getPossibleRoutes()>0){
                 totalCost+=o.getChosenRoute().getCost();
             }
-
-            //TODO: add optimization of combining orders that use the same carrier (add weight -> reduce cost)
         }
-        System.out.println(unresolvedOrders + " Orders out of " + data.orders.size() + " could not be shipped");
         //round total cost to cents
         totalCost = (double) Math.round(totalCost * 100) /100;
         System.out.println("Total cost: " + totalCost + " €");
-        data.writeFile();
+        //write all orders to excel file
+        outputData.writeFile();
         long timeEnd = System.currentTimeMillis();
 
         System.out.println("Total execution time: " + (timeEnd-timeStart) + "ms");

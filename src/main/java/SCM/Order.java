@@ -106,7 +106,23 @@ public class Order {
                 possibleRoutes = routes.size();
             }
         }
-        //choose the cheapest route
+    }
+    public void checkRoutes(){
+        ArrayList<Route> impossibleRoute = new ArrayList<>();
+        for (Route r: routes) {
+            if (r.getPlant().getCapacity()<=0){
+                impossibleRoute.add(r);
+            }
+        }
+        //remove impossible routes
+        if(!impossibleRoute.isEmpty()){
+            for (Route r: impossibleRoute) {
+                routes.remove(r);
+            }
+            possibleRoutes = routes.size();
+        }
+    }
+    public void chooseCheapestRoute(){
         double bufferCost = Double.MAX_VALUE;
         Route bufferRoute = null;
         for (Route r: routes) {
@@ -116,7 +132,6 @@ public class Order {
             }
         }
         chosenRoute = routes.indexOf(bufferRoute);
-
     }
     public int getPossibleRoutes() {
         return possibleRoutes;
