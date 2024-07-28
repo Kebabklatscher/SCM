@@ -1,6 +1,7 @@
 package SCM;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Main {
 
@@ -15,12 +16,10 @@ public class Main {
             System.out.println("Error while reading the file:" + error.getMessage());
             return;
         }
+        System.out.println("Total orders: " + data.orders.size());
 
         int unresolvedOrders = 0;
-        //calculate all possible routes for every order
-        for (Order o: data.orders){
-            o.planRoutes(data.products,data.plants,data.freightRates);
-        }
+
         //apply route choosing algorithm
         Data outputData = chooseRoutes(data);
 
@@ -30,7 +29,6 @@ public class Main {
                 unresolvedOrders++;
             }
         }
-        System.out.println("Total orders: " + outputData.orders.size());
         System.out.println("Shipped orders: " + (outputData.orders.size() - unresolvedOrders));
         System.out.println("Unresolved orders: " + unresolvedOrders);
 
@@ -43,8 +41,10 @@ public class Main {
             }
         }
         //round total cost to cents
+        int totalCostRounded;
         totalCost = (double) Math.round(totalCost * 100) /100;
-        System.out.println("Total cost: " + totalCost + " €");
+        System.out.printf("Total cost: " + "%10.2f" + " €\n", totalCost);
+
         //write all orders to Excel file
         outputData.writeFile();
         long timeEnd = System.currentTimeMillis();
@@ -56,37 +56,59 @@ public class Main {
         Data outputData = new Data();
         boolean totalCapacityChanged = false;
         Plant buffer;
-        while (!data.orders.isEmpty()){
-            for (Order o: data.orders) {
-                //check if routes are now impossible due to capacity
-                o.checkRoutes();
-                switch (o.getPossibleRoutes()){
-                    case 0:
-                        outputData.orders.add(o);
-                        break;
-                    case 1:
-                        o.chooseCheapestRoute();
-                        buffer = o.getChosenRoute().getPlant();
-                        buffer.decrementCapacity();
-                        data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
-                        outputData.orders.add(o);
-                        totalCapacityChanged = true;
-                        break;
-                    default:
-                        //when there are no more orders with 0 and 1, choose a route
-                        if(!totalCapacityChanged){
+        ArrayList<Order> nextDayBuffer = new ArrayList<>();
+        int dayCounter = 0;
+        int unshippedOrders = data.orders.size();
+        //calculate shipping day by day
+        while(dayCounter<15 && !data.orders.isEmpty()){
+            //calculate all possible routes for every order
+            for (Order o: data.orders){
+                o.planRoutes(data.products,data.plants,data.freightRates);
+            }
+            while (!data.orders.isEmpty()){
+                for (Order o: data.orders) {
+                    //check if routes are now impossible due to capacity
+                    o.checkRoutes();
+                    switch (o.getPossibleRoutes()){
+                        case 0:
+                            nextDayBuffer.add(o);
+                            break;
+                        case 1:
                             o.chooseCheapestRoute();
                             buffer = o.getChosenRoute().getPlant();
                             buffer.decrementCapacity();
                             data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
+                            o.setTransportTime(dayCounter);
                             outputData.orders.add(o);
                             totalCapacityChanged = true;
-                        }
-                        break;
+                            break;
+                        default:
+                            //when there are no more orders with 0 and 1, choose a route
+                            if(!totalCapacityChanged){
+                                o.chooseCheapestRoute();
+                                buffer = o.getChosenRoute().getPlant();
+                                buffer.decrementCapacity();
+                                data.plants.set(data.plants.indexOf(o.getChosenRoute().getPlant()), buffer);
+                                o.setTransportTime(dayCounter);
+                                outputData.orders.add(o);
+                                totalCapacityChanged = true;
+                            }
+                            break;
+                    }
                 }
+                data.orders.removeAll(outputData.orders);
+                data.orders.removeAll(nextDayBuffer);
+                totalCapacityChanged = false;
             }
-            data.orders.removeAll(outputData.orders);
-            totalCapacityChanged = false;
+
+            System.out.println("Day " + dayCounter + ": " + (unshippedOrders - nextDayBuffer.size()) + " orders shipped");
+            unshippedOrders = nextDayBuffer.size();
+            dayCounter++;
+            //add all remaining orders to the next day
+            data.orders.addAll(nextDayBuffer);
+            nextDayBuffer.clear();
+            //reset capacities
+            for(Plant p: data.plants){p.resetCapacity();}
         }
         return outputData;
     }

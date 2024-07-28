@@ -8,7 +8,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 public class Data {
@@ -28,9 +30,8 @@ public class Data {
             Row row = rowIterator.next(); //iterate through all rows
             Cell cell = row.getCell(0);
             int id = (int) cell.getNumericCellValue();
-            //TODO: convert provided date from int to LocalDate, for now working with LocalDate.now()
             cell = row.getCell(1);
-            int date = (int) cell.getNumericCellValue();
+            LocalDate date = cell.getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             cell = row.getCell(8);
             String customer = cell.getStringCellValue();
             cell = row.getCell(5);
@@ -42,7 +43,7 @@ public class Data {
             cell = row.getCell(13);
             double weight = cell.getNumericCellValue();
             //some columns are ignored for now
-            orders.add(new Order(id,LocalDate.now(),customer,ServiceLevel.valueOf(serviceLevel),product,quantity,weight));
+            orders.add(new Order(id,date,customer,ServiceLevel.valueOf(serviceLevel),product,quantity,weight));
         }
         //Sheet 1 - FreightRates
         sheet = wb.getSheetAt(1);
@@ -68,8 +69,9 @@ public class Data {
             double rate = cell.getNumericCellValue();
             cell = row.getCell(8);
             String modeOfTransport = cell.getStringCellValue().replaceAll("\\s+","");   //remove whitespaces from cells
-            //tpt_day_cnt is ignored for now
-            freightRates.add(new FreightRate(carrier,originPort,destinationPort,minWeight,maxWeight,ServiceLevel.valueOf(serviceLevel),minRate,rate,ModeOfTransport.valueOf(modeOfTransport)));
+            cell = row.getCell(9);
+            int transportTime = (int) cell.getNumericCellValue();
+            freightRates.add(new FreightRate(carrier,originPort,destinationPort,minWeight,maxWeight,ServiceLevel.valueOf(serviceLevel),minRate,rate,ModeOfTransport.valueOf(modeOfTransport),transportTime));
         }
         //Sheet 2 - WhCosts
         sheet = wb.getSheetAt(2);
@@ -172,7 +174,8 @@ public class Data {
         row.createCell(9).setCellValue(createHelper.createRichTextString("Destination Port"));
         row.createCell(10).setCellValue(createHelper.createRichTextString("Carrier"));
         row.createCell(11).setCellValue(createHelper.createRichTextString("Mode of Transport"));
-        row.createCell(12).setCellValue(createHelper.createRichTextString("Cost"));
+        row.createCell(12).setCellValue(createHelper.createRichTextString("Transport Time"));
+        row.createCell(13).setCellValue(createHelper.createRichTextString("Cost"));
 
         //other rows
         int i = 1;
@@ -186,17 +189,20 @@ public class Data {
             row.createCell(4).setCellValue(o.getQuantity());
             row.createCell(5).setCellValue(o.getWeight());
             row.createCell(6).setCellValue(o.getPossibleRoutes());
+            //if there was an error while generating routes, write empty strings
             if(o.getPossibleRoutes()!=0){
                 row.createCell(7).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPlant().getName()));
                 row.createCell(8).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPort()));
                 row.createCell(9).setCellValue(createHelper.createRichTextString("PORT09"));
                 row.createCell(10).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getCarrier()));
+                //CRF doesn't have an origin port, the other service levels do
                 if(o.getServiceLevel().equals(ServiceLevel.CRF)){
                     row.createCell(11).setCellValue(createHelper.createRichTextString(""));
                 }else{
-                    row.createCell(12).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getFreightRate().getModeOfTransport().toString()));
+                    row.createCell(11).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getFreightRate().getModeOfTransport().toString()));
                 }
-                row.createCell(12).setCellValue(o.getChosenRoute().getCost());
+                row.createCell(12).setCellValue(o.getTransportTime());
+                row.createCell(13).setCellValue(o.getChosenRoute().getCost());
             }else{
                 row.createCell(7).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(8).setCellValue(createHelper.createRichTextString(""));
@@ -204,6 +210,7 @@ public class Data {
                 row.createCell(10).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(11).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(12).setCellValue(0);
+                row.createCell(13).setCellValue(0);
             }
         }
 

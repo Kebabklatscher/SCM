@@ -9,6 +9,7 @@ public class FreightRate {
     private final double minRate;
     private final double rate;
     private final ModeOfTransport modeOfTransport;
+    private final int transportTime;
 
     public String getCarrier() {
         return carrier;
@@ -46,7 +47,7 @@ public class FreightRate {
     public Boolean isInWeightRange(double weight){
         return weight >= minWeight && weight <= maxWeight;
     }
-    public FreightRate(String carrier, String origPort, String destPort, double minWeight, double maxWeight, ServiceLevel serviceLevel, double minRate, double rate, ModeOfTransport modeOfTransport) {
+    public FreightRate(String carrier, String origPort, String destPort, double minWeight, double maxWeight, ServiceLevel serviceLevel, double minRate, double rate, ModeOfTransport modeOfTransport, int transportTime) {
         this.carrier = carrier;
         this.origPort = origPort;
         this.destPort = destPort;
@@ -56,6 +57,7 @@ public class FreightRate {
         this.minRate = minRate;
         this.rate = rate;
         this.modeOfTransport = modeOfTransport;
+        this.transportTime = transportTime;
     }
 
     @Override

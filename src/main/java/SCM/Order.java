@@ -6,7 +6,8 @@ import java.util.ArrayList;
 public class Order {
 
     private final int id;
-    private final LocalDate date;
+    private final LocalDate orderDate;
+    private int transportTime;
     private final String customer;
     private final ServiceLevel serviceLevel;
     private final int product;
@@ -47,7 +48,7 @@ public class Order {
         //get plants with capacity > 0
         for (String s:possiblePlantsString) {
             for (Plant p:plants) {
-                if(p.getName().equals(s) && (p.getCapacity() > 0)){
+                if(p.getName().equals(s) && (p.getDailyCapacity() > 0)){
                     possiblePlants.add(p);
                     break;
                 }
@@ -110,7 +111,7 @@ public class Order {
     public void checkRoutes(){
         ArrayList<Route> impossibleRoute = new ArrayList<>();
         for (Route r: routes) {
-            if (r.getPlant().getCapacity()<=0){
+            if (r.getPlant().getDailyCapacity()<=0){
                 impossibleRoute.add(r);
             }
         }
@@ -139,9 +140,19 @@ public class Order {
     public Route getChosenRoute(){
         return routes.get(chosenRoute);
     }
-    public Order(int id, LocalDate date, String customer, ServiceLevel serviceLevel, int product, int quantity, double weight) {
+
+    public int getTransportTime() {
+        return transportTime;
+    }
+
+    public void setTransportTime(int transportTime) {
+        this.transportTime = transportTime;
+    }
+
+    public Order(int id, LocalDate orderDate, String customer, ServiceLevel serviceLevel, int product, int quantity, double weight) {
         this.id = id;
-        this.date = date;
+        this.orderDate = orderDate;
+        this.transportTime = 0;
         this.customer = customer;
         this.serviceLevel = serviceLevel;
         this.product = product;
@@ -154,7 +165,7 @@ public class Order {
     public String toString() {
         return "Order{" +
                 "id=" + id +
-                ", date=" + date +
+                ", date=" + orderDate +
                 ", customer='" + customer + '\'' +
                 ", serviceLevel=" + serviceLevel +
                 ", product=" + product +

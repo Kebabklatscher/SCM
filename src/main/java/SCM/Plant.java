@@ -5,7 +5,8 @@ import java.util.ArrayList;
 public class Plant {
     private final String name;
     private final ArrayList<String> possiblePorts = new ArrayList<>();
-    private int capacity;
+    private int dailyCapacity;
+    private int initialCapacity;
     private final double unitCost;
     private Boolean exclusive;
     private final ArrayList<String> exclusiveCustomers = new ArrayList<>();
@@ -37,13 +38,17 @@ public class Plant {
         return possiblePorts;
     }
     public void setCapacity(int capacity) {
-        this.capacity = capacity;
+        this.initialCapacity = capacity;
+        this.dailyCapacity = capacity;
     }
     public void decrementCapacity(){
-        this.capacity = this.capacity - 1;
+        this.dailyCapacity = this.dailyCapacity - 1;
     }
-    public int getCapacity() {
-        return capacity;
+    public int getDailyCapacity() {
+        return dailyCapacity;
+    }
+    public void resetCapacity(){
+        this.dailyCapacity = initialCapacity;
     }
     public double getCost(int quantity) {
         return unitCost*quantity;
@@ -54,7 +59,7 @@ public class Plant {
         return "Plant{" +
                 "name='" + name + '\'' +
                 ", possiblePorts=" + possiblePorts +
-                ", capacity=" + capacity +
+                ", capacity=" + dailyCapacity +
                 ", unitCost=" + unitCost +
                 ", isExclusive=" + exclusive +
                 '}';
