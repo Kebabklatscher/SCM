@@ -261,9 +261,7 @@ public class Data {
                     o.setChosenRoute(route);
                 }
             }
-            groundOrders.addAll(groundOrdersMap.get(key));
+            orders.addAll(groundOrdersMap.get(key));
         }
-
-        orders.addAll(groundOrders);
     }
 }
