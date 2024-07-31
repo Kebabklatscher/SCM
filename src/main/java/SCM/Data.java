@@ -9,9 +9,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Data {
     public ArrayList<Plant> plants = new ArrayList<>();
@@ -168,14 +167,13 @@ public class Data {
         row.createCell(3).setCellValue(createHelper.createRichTextString("Product"));
         row.createCell(4).setCellValue(createHelper.createRichTextString("Quantity"));
         row.createCell(5).setCellValue(createHelper.createRichTextString("Weight"));
-        row.createCell(6).setCellValue(createHelper.createRichTextString("possible Routes"));
-        row.createCell(7).setCellValue(createHelper.createRichTextString("Plant"));
-        row.createCell(8).setCellValue(createHelper.createRichTextString("Origin Port"));
-        row.createCell(9).setCellValue(createHelper.createRichTextString("Destination Port"));
-        row.createCell(10).setCellValue(createHelper.createRichTextString("Carrier"));
-        row.createCell(11).setCellValue(createHelper.createRichTextString("Mode of Transport"));
-        row.createCell(12).setCellValue(createHelper.createRichTextString("Transport Time"));
-        row.createCell(13).setCellValue(createHelper.createRichTextString("Cost"));
+        row.createCell(6).setCellValue(createHelper.createRichTextString("Plant"));
+        row.createCell(7).setCellValue(createHelper.createRichTextString("Origin Port"));
+        row.createCell(8).setCellValue(createHelper.createRichTextString("Destination Port"));
+        row.createCell(9).setCellValue(createHelper.createRichTextString("Carrier"));
+        row.createCell(10).setCellValue(createHelper.createRichTextString("Mode of Transport"));
+        row.createCell(11).setCellValue(createHelper.createRichTextString("Transport Time"));
+        row.createCell(12).setCellValue(createHelper.createRichTextString("Cost"));
 
         //other rows
         int i = 1;
@@ -188,29 +186,30 @@ public class Data {
             row.createCell(3).setCellValue(o.getProduct());
             row.createCell(4).setCellValue(o.getQuantity());
             row.createCell(5).setCellValue(o.getWeight());
-            row.createCell(6).setCellValue(o.getPossibleRoutes());
             //if there was an error while generating routes, write empty strings
             if(o.getPossibleRoutes()!=0){
-                row.createCell(7).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPlant().getName()));
-                row.createCell(8).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPort()));
-                row.createCell(9).setCellValue(createHelper.createRichTextString("PORT09"));
-                row.createCell(10).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getCarrier()));
-                //CRF doesn't have an origin port, the other service levels do
+                row.createCell(6).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPlant().getName()));
+                row.createCell(7).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getPort()));
+                row.createCell(8).setCellValue(createHelper.createRichTextString("PORT09"));
+
+                //CRF doesn't have carrier and origin port, the other service levels do
                 if(o.getServiceLevel().equals(ServiceLevel.CRF)){
-                    row.createCell(11).setCellValue(createHelper.createRichTextString(""));
+                    row.createCell(9).setCellValue(createHelper.createRichTextString(""));
+                    row.createCell(10).setCellValue(createHelper.createRichTextString(""));
                 }else{
-                    row.createCell(11).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getFreightRate().getModeOfTransport().toString()));
+                    row.createCell(9).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getFreightRate().getCarrier()));
+                    row.createCell(10).setCellValue(createHelper.createRichTextString(o.getChosenRoute().getFreightRate().getModeOfTransport().toString()));
                 }
-                row.createCell(12).setCellValue(o.getTransportTime());
-                row.createCell(13).setCellValue(o.getChosenRoute().getCost());
+                row.createCell(11).setCellValue(o.getTransportTime());
+                row.createCell(12).setCellValue(o.getChosenRoute().getCost());
             }else{
+                row.createCell(6).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(7).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(8).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(9).setCellValue(createHelper.createRichTextString(""));
                 row.createCell(10).setCellValue(createHelper.createRichTextString(""));
-                row.createCell(11).setCellValue(createHelper.createRichTextString(""));
+                row.createCell(11).setCellValue(0);
                 row.createCell(12).setCellValue(0);
-                row.createCell(13).setCellValue(0);
             }
         }
 
@@ -223,5 +222,48 @@ public class Data {
         catch (IOException error) {
             System.out.println("Error while writing the file: " + error.getMessage());
         }
+    }
+
+    public void calculateGroundCost(){
+        //combine the freight rates of orders of the same day and origin port and updates the orders
+
+        ArrayList<Order> groundOrders = new ArrayList<>();
+        for(Order o:orders){
+            if(o.getServiceLevel()!=ServiceLevel.CRF && o.getChosenRoute().getFreightRate().getModeOfTransport().equals(ModeOfTransport.GROUND)){
+                groundOrders.add(o);
+            }
+        }
+        orders.removeAll(groundOrders);
+        //TODO: for simplicity, this function combines orders regardless of service level, further work needed here
+        Map<String, List<Order>> groundOrdersMap = groundOrders.stream().collect(Collectors.groupingBy(o -> o.getChosenRoute().getPort()));
+        double weight;
+        for(String key:groundOrdersMap.keySet()){
+            weight=0;
+            for(Order o:groundOrdersMap.get(key)){
+                weight+=o.getWeight();
+            }
+            //search for possible FreightRates
+            double bufferCost = Double.MAX_VALUE;
+            FreightRate bufferFreightRate = null;
+            for (FreightRate f: freightRates) {
+                //choose GROUND FreightRate with the lowest cost
+                if(f.getOrigPort().equals(key) && f.getDestPort().equals("PORT09") && f.getModeOfTransport().equals(ModeOfTransport.GROUND) && f.isInWeightRange(weight) && (f.getCost(weight)<bufferCost)){
+                    bufferCost = f.getCost(weight);
+                    bufferFreightRate = f;
+                }
+            }
+            //if there are possible FreightRates, choose the new GROUND Route
+            if(!(bufferFreightRate == null)){
+                for(Order o:groundOrdersMap.get(key)){
+                    Route route = o.getChosenRoute();
+                    route.setFreightRate(bufferFreightRate);
+                    route.setCost(bufferCost);
+                    o.setChosenRoute(route);
+                }
+            }
+            groundOrders.addAll(groundOrdersMap.get(key));
+        }
+
+        orders.addAll(groundOrders);
     }
 }

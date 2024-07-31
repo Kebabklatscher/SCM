@@ -29,10 +29,10 @@ public class Main {
                 unresolvedOrders++;
             }
         }
-        System.out.println("Shipped orders: " + (outputData.orders.size() - unresolvedOrders));
+
         System.out.println("Unresolved orders: " + unresolvedOrders);
 
-        //TODO: calculate GROUND shipping cost (combining all routes from the same port on the same day in 1 freightrate)
+        outputData.calculateGroundCost();
         //calculate total cost
         double totalCost = 0;
         for (Order o: outputData.orders){
@@ -41,7 +41,6 @@ public class Main {
             }
         }
         //round total cost to cents
-        int totalCostRounded;
         totalCost = (double) Math.round(totalCost * 100) /100;
         System.out.printf("Total cost: " + "%10.2f" + " €\n", totalCost);
 
@@ -54,11 +53,13 @@ public class Main {
 
     public static Data chooseRoutes(Data data){
         Data outputData = new Data();
+        outputData.freightRates = data.freightRates;
         boolean totalCapacityChanged = false;
         Plant buffer;
         ArrayList<Order> nextDayBuffer = new ArrayList<>();
         int dayCounter = 0;
         int unshippedOrders = data.orders.size();
+        //TODO: what if there are orders on multiple days?
         //calculate shipping day by day
         while(dayCounter<15 && !data.orders.isEmpty()){
             //calculate all possible routes for every order

@@ -96,7 +96,6 @@ public class Order {
                 }else{
                     r.setCost(r.getPlant().getCost(quantity)+bufferCost);
                     r.setFreightRate(bufferFreightRate);
-                    r.setCarrier(bufferFreightRate.getCarrier());
                 }
             }
             //remove impossible routes
@@ -141,6 +140,10 @@ public class Order {
         return routes.get(chosenRoute);
     }
 
+    public void setChosenRoute(Route chosenRoute) {
+        this.routes.add(chosenRoute);
+        this.chosenRoute = this.routes.indexOf(chosenRoute);
+    }
     public int getTransportTime() {
         return transportTime;
     }
@@ -159,19 +162,5 @@ public class Order {
         this.quantity = quantity;
         this.weight = weight;
         this.routes = new ArrayList<>();
-    }
-
-    @Override
-    public String toString() {
-        return "Order{" +
-                "id=" + id +
-                ", date=" + orderDate +
-                ", customer='" + customer + '\'' +
-                ", serviceLevel=" + serviceLevel +
-                ", product=" + product +
-                ", quantity=" + quantity +
-                ", weight=" + weight +
-                ", cost=" + routes.get(chosenRoute).getCost() +
-                '}';
     }
 }
