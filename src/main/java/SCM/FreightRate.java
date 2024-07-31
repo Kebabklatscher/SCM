@@ -20,12 +20,6 @@ public class FreightRate {
     public String getDestPort() {
         return destPort;
     }
-    public double getMinWeight() {
-        return minWeight;
-    }
-    public double getMaxWeight() {
-        return maxWeight;
-    }
     public ServiceLevel getServiceLevel() {
         return serviceLevel;
     }
@@ -39,8 +33,6 @@ public class FreightRate {
         return modeOfTransport;
     }
     public double getCost(double weight){
-        //TODO: calculate GROUND transportation cost
-        //AIR cost:
         //returns minRate, if weight isn't over minimum
         return Math.max(weight * rate, minRate);
     }
@@ -58,20 +50,5 @@ public class FreightRate {
         this.rate = rate;
         this.modeOfTransport = modeOfTransport;
         this.transportTime = transportTime;
-    }
-
-    @Override
-    public String toString() {
-        return "FreightRate{" +
-                "carrier='" + carrier + '\'' +
-                ", origPort='" + origPort + '\'' +
-                ", destPort='" + destPort + '\'' +
-                ", minWeight=" + minWeight +
-                ", maxWeight=" + maxWeight +
-                ", serviceLevel=" + serviceLevel +
-                ", minRate=" + minRate +
-                ", rate=" + rate +
-                ", ModeOfTransport='" + modeOfTransport + '\'' +
-                '}';
     }
 }

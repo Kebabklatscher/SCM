@@ -53,15 +53,4 @@ public class Plant {
     public double getCost(int quantity) {
         return unitCost*quantity;
     }
-
-    @Override
-    public String toString() {
-        return "Plant{" +
-                "name='" + name + '\'' +
-                ", possiblePorts=" + possiblePorts +
-                ", capacity=" + dailyCapacity +
-                ", unitCost=" + unitCost +
-                ", isExclusive=" + exclusive +
-                '}';
-    }
 }

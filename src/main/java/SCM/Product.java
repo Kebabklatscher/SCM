@@ -18,12 +18,4 @@ public class Product {
     public ArrayList<String> getPossiblePlants() {
         return possiblePlants;
     }
-
-    @Override
-    public String toString() {
-        return "Product{" +
-                "id=" + id +
-                ", possiblePlants=" + possiblePlants +
-                '}';
-    }
 }
