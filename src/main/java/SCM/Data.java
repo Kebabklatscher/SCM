@@ -257,7 +257,7 @@ public class Data {
                 for(Order o:groundOrdersMap.get(key)){
                     Route route = o.getChosenRoute();
                     route.setFreightRate(bufferFreightRate);
-                    route.setCost(bufferCost);
+                    route.setCost(bufferCost/groundOrdersMap.get(key).size());
                     o.setChosenRoute(route);
                 }
             }
